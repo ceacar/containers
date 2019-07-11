@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+function build_component(){
+  local component=${1:?component name empty}
+
+  echo "building $component"
+  docker build -t simple_$component - <$CONTAINER_PATH/$component/docker/dockerfile_cassandra
+}
+
+build_component $@

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+function run_image(){
+  local image=${1:?image cannot be empty}
+  # --cap-add sys_resource is to let container able to run ulimit cmds
+  docker run --cap-add sys_resource -t -i simple_$image
+}
+
+run_image $@
