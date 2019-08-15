@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# suppose airflow_home is mounted to /airflow
+export AIRFLOW_HOME=/root/airflow
+# start the web server, default port is 8080
+airflow webserver -p 8080 > /var/log/airflow/webserver.log2>&1 &
+echo $! > /tmp/airflow.webserver.pid
+# start the scheduler
+airflow scheduler > /var/log/airflow/scheduler.log 2>&1 &
+scheduler_pid="$!"
+echo $scheduler_pid > /tmp/airflow.scheduler.pid
+wait $scheduler_pid

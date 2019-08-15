@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2019-08-15T19:03:13Z"
+  labels:
+    app: airflow
+  name: airflow-deployment
+  namespace: default
+  resourceVersion: "55067"
+  selfLink: /api/v1/namespaces/default/services/airflow-deployment
+  uid: 1e1989b5-5c20-4e84-93d5-9940e1327926
+spec:
+  clusterIP: 10.102.204.16
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 31112
+  selector:
+    app: airflow
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

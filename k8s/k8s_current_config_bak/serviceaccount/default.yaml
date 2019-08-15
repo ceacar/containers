@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: "2019-08-10T15:13:06Z"
+  name: default
+  namespace: default
+  resourceVersion: "339"
+  selfLink: /api/v1/namespaces/default/serviceaccounts/default
+  uid: ea3ea4a9-d05a-40cd-8bbf-9d4167e964b1
+secrets:
+- name: default-token-d8xvd

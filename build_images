@@ -1,9 +1,33 @@
 #!/usr/bin/env bash
+set -e
 function build_component(){
+  local push_flag
+  push_flag=false
+
+  # check if --push flag is set
+  if [ "$1" = "--push" ];then
+    shift
+    push_flag=true 
+  fi
+
   local component=${1:?component name empty}
+  local image_name="simple_$component"
+
 
   echo "building $component"
-  docker build -t simple_$component - <$CONTAINER_PATH/$component/docker/dockerfile_cassandra
+  cd ./$component/docker
+  docker build --build-arg docker_build_path=$PWD -t $image_name .
+  #docker build --build-arg docker_build_path=$PWD -t $image_name - <$CONTAINER_PATH/$component/docker/dockerfile_$component
+  echo "run \"docker run -it $image_name bash\" to try it out"
+  cd - > /dev/null
+
+  if $push_flag;then
+    echo "pushing image $image_name"
+    docker tag ${image_name}:latest ceacar/exp:${image_name}
+    docker push ceacar/exp:$image_name
+    return 
+  fi
+
 }
 
 build_component $@

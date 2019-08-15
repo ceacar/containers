@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+for n in $(kubectl get -o=name pvc,configmap,serviceaccount,secret,ingress,service,deployment,statefulset,hpa,job,cronjob)
+do
+    mkdir -p ./k8s_current_config_bak/$(dirname $n)
+    kubectl get -o=yaml $n > ./k8s_current_config_bak/$n.yaml
+done
