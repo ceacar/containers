@@ -1,0 +1,14 @@
+version: '3'
+services:
+  airflow_webserver:
+    #build: ../airflow/docker
+    image: ceacar/exp:simple_airflow
+    ports:
+      - "43456:8080"
+    volumes:
+      - /home/ceacar/projects/play_ground/airflow_playground/dags:/root/airflow/dags
+
+  redis:
+    image: redis:4.0.11-alpine
+    ports:
+      - '45869:6379'

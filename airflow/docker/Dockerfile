@@ -12,7 +12,7 @@ ENV DOCKER_BUILD_PATH=${docker_build_path}
 RUN apt-get update && apt-get install -y python3 python-pip
 
 # add tools for common troubleshoot
-RUN apt-get install -y vim less htop tmux screen curl
+RUN apt-get install -y vim less htop tmux screen curl iputils-ping iproute2
 
 # you may see /etc/init.d/cassandra: 72: ulimit: error setting limit (Operation not permitted), it is script try to set ulimit
 RUN pip install --upgrade pip
