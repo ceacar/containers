@@ -1,22 +1,9 @@
-FROM ubuntu
-
-# declare of env variable from docker build command
-ARG docker_build_path=local
-
-# disable interactive mode since cassandra will promp for timezone information
-ENV DEBIAN_FRONTEND noninteractive
-
-ENV DOCKER_BUILD_PATH=${docker_build_path}
-
-# install dependencies for curl cmd and curl cmd itself
-RUN apt-get update && apt-get install -y python3 python-pip
-
-# add tools for common troubleshoot
-RUN apt-get install -y vim less htop tmux screen curl iputils-ping iproute2
-
-# you may see /etc/init.d/cassandra: 72: ulimit: error setting limit (Operation not permitted), it is script try to set ulimit
-RUN pip install --upgrade pip
-RUN pip install apache-airflow
+from ceacar/exp:simple_base
+#FROM ubuntu
+# RUN pip install --upgrade pip
+# TODO: doesn't know how to solve pip3 not grade issue
+#RUN pip3 install --upgrade setuptools pip
+RUN pip3 install apache-airflow
 RUN airflow initdb
 RUN mkdir -p /var/log/airflow
 COPY scripts/start_airflow /usr/local/bin/
