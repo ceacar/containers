@@ -1,0 +1,3 @@
+#!/bin/bash
+PYTHONPATH=$PYTHONPATH:$PWD/../scripts
+luigi --module luigi_test Dummy2

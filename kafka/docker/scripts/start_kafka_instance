@@ -1,0 +1,23 @@
+#!/bin/bash
+# this scripts only starts a trial zookeeper and kafka server
+
+echo "type 'bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test' to send message to broker'"
+# starts a consumer to consum all message from beginning
+echo "type 'bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning' to consume message"
+
+# start zoo keeper
+echo "starting zookeeper"
+bin/zookeeper-server-start.sh config/zookeeper.properties 2>&1 | tee /tmp/zookeeper.log.txt & 
+echo "starting kafka"
+bin/kafka-server-start.sh config/server.properties 2>&1 | tee /tmp/kafka.log.txt &
+# create topic name test:
+echo "creating test kafka topic"
+bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic test
+
+# we will just tail kafka log for output of docker-compose
+tail -f /tmp/kafka.log.txt
+
+# a console to type in message in kafka
+# bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
+# starts a consumer to consum all message from beginning
+# bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning

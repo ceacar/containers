@@ -1,0 +1,45 @@
+version: '2.0'
+
+# this yml file to launch luigi + kafka to communicate with each other
+
+services:
+
+  luigi:
+    image: ceacar/exp:simple_luigi
+    ports:
+      - '38888:10000'
+    tty: true
+    stdin_open: true
+
+  kafka:
+    image: ceacar/exp:simple_kafka
+    ports:
+      - '38887:9092'
+    tty: true
+    stdin_open: true
+
+    #web:
+    #  build: .
+    #  image: web
+    #  container_name: web
+    #  ports:
+    #    - '5004:5000'
+    #  command: python manage.py run -h 0.0.0.0
+    #  volumes:
+    #    - .:/usr/src/app
+    #  environment:
+    #    - FLASK_DEBUG=1
+    #    - APP_SETTINGS=project.server.config.DevelopmentConfig
+    #  depends_on:
+    #    - redis
+
+    #worker:
+    #  image: web
+    #  command: python manage.py run_worker
+    #  volumes:
+    #    - .:/usr/src/app
+    #  environment:
+    #    - APP_SETTINGS=project.server.config.DevelopmentConfig
+    #  depends_on:
+    #    - redis
+

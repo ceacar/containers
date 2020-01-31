@@ -15,4 +15,4 @@ RUN apt-get update && apt-get install -y python3 python-pip python3-pip
 RUN apt-get install -y vim less htop tmux screen curl iputils-ping iproute2 dnsutils git
 RUN pip install --upgrade pip
 RUN pip3 install git+https://github.com/ceacar/excalibur
-
+RUN apt-get clean && apt-get update && apt-get install -y default-jdk
