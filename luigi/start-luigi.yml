@@ -6,17 +6,36 @@ services:
 
   luigi:
     image: ceacar/exp:simple_luigi
-    ports:
-      - '38888:10000'
-    tty: true
-    stdin_open: true
+    # ports:
+    #   - '38888:10000'
+    hostname: luigi_host
+    container_name: luigi_test
 
   kafka:
     image: ceacar/exp:simple_kafka
-    ports:
-      - '38887:9092'
     tty: true
     stdin_open: true
+    hostname: kafka_host 
+    # ports:
+    #  - '9092'
+    # expose:
+    #   - '9092'
+    #   - '10000'
+      # - '29094'
+    container_name: kafka_test 
+    # command: /bin/bash -c "sleep 9999999"
+
+    # KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    # KAFKA_LISTENERS: INTERNAL://kafka:9092,OUTSIDE://kafka:9094
+    # KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,OUTSIDE://localhost:9094
+    # KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,OUTSIDE:PLAINTEXT
+    # KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+    # environment:
+    #   # For more details see See https://rmoff.net/2018/08/02/kafka-listeners-explained/
+    #   KAFKA_LISTENERS: LISTENER_BOB://kafka0:29092,LISTENER_FRED://kafka0:9092,LISTENER_ALICE://kafka0:29094
+    #   KAFKA_ADVERTISED_LISTENERS: LISTENER_BOB://kafka0:29092,LISTENER_FRED://localhost:9092,LISTENER_ALICE://never-gonna-give-you-up:29094
+    #   KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_BOB:PLAINTEXT,LISTENER_FRED:PLAINTEXT,LISTENER_ALICE:PLAINTEXT
+    #   KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_BOB
 
     #web:
     #  build: .

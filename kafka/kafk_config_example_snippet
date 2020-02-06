@@ -1,0 +1,16 @@
+
+kafka0:
+    image: "confluentinc/cp-enterprise-kafka:5.2.1"
+    ports:
+      - '9092:9092'
+      - '29094:29094'
+    depends_on:
+      - zookeeper
+    environment:
+      […]
+      # For more details see See https://rmoff.net/2018/08/02/kafka-listeners-explained/
+      KAFKA_LISTENERS: LISTENER_BOB://kafka0:29092,LISTENER_FRED://kafka0:9092,LISTENER_ALICE://kafka0:29094
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_BOB://kafka0:29092,LISTENER_FRED://localhost:9092,LISTENER_ALICE://never-gonna-give-you-up:29094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_BOB:PLAINTEXT,LISTENER_FRED:PLAINTEXT,LISTENER_ALICE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_BOB
+[…]
