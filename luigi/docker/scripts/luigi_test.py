@@ -2,6 +2,10 @@ import luigi
 import logging
 from kafka import KafkaProducer
 import json
+import traceback
+import sys
+import socket
+import subprocess
 
 
 """
@@ -28,6 +32,22 @@ KAFKA_VERSION = (2, 4)
 # producer = KafkaProducer(bootstrap_servers=['localhost:38887'], value_serializer=lambda x: json.dumps(x).encode('utf-8'), api_version=KAFKA_VERSION)
 producer = KafkaProducer(bootstrap_servers=['kafka:9092'],  api_version=KAFKA_VERSION)
 
+
+def format_traceback():
+    formatted_traceback = traceback.format_exc()
+    return formatted_traceback
+
+
+def format_error(task, subject, headline, formatted_traceback):
+    subject="Luigi: {task} failed scheduling. Host: {host}"
+    headline="Will not run {task} or any dependencies due to error in deps() method"
+    formatted_subject = subject.format(task=task, host=host)
+    formatted_headline = headline.format(task=task, host=host)
+    command = subprocess.list2cmdline(sys.argv)
+    message = luigi.notifications.format_task_error(formatted_headline, task, command, formatted_traceback)
+    return subject + message
+
+
 @luigi.Task.event_handler(luigi.Event.SUCCESS)
 def celebrate_sucess(task):
     print("{} finished".format(task))
@@ -35,13 +55,36 @@ def celebrate_sucess(task):
 
 @luigi.Task.event_handler(luigi.Event.DEPENDENCY_MISSING)
 def alert_err(task):
+    # task, formatted_traceback,
+    # subject="Luigi: {task} failed scheduling. Host: {host}",
+    # headline="Will not run {task} or any dependencies due to error in deps() method",
+    # formatted_subject = subject.format(task=task, host=self.host)
+    # formatted_headline = headline.format(task=task, host=self.host)
+    # command = subprocess.list2cmdline(sys.argv)
+    # message = luigi.notifications.format_task_error(formatted_headline, task, command, formatted_traceback)
+
     producer.send('test', value="Unfulfilled dependencies {}".format(task))
+    # producer.send('test', value=subject + message)
 
 
 @luigi.Task.event_handler(luigi.Event.FAILURE)
 def alert_failed_task(task, err):
-    msg = "{} failed, err:{}".format(task, str(err))
+    # luigi.notifications.generate_email
+    import ipdb
+    ipdb.set_trace()
+    host = socket.gethostname()
+
+    formatted_traceback = format_traceback()
+    subject="Luigi: {task} failed scheduling. Host: {host}"
+    headline="Will not run {task} or any dependencies due to error in deps() method"
+
+    msg = format_error(task, subject, headline, formatted_traceback)
+
+
     producer.send('test', value=msg)
+
+    # msg = "{} failed, err:{}".format(task, str(err))
+    # producer.send('test', value=msg)
 
 @luigi.Task.event_handler(luigi.Event.PROCESSING_TIME)
 def long_running(task, err):
@@ -98,5 +141,5 @@ class Dummy4(Dummy1):
         return []
 
     def run(self):
-        super(Dummy3, self).run()
+        super(Dummy4, self).run()
         raise Exception('oof')
