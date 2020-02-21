@@ -1,7 +1,9 @@
 #!/bin/bash
 PYTHONPATH=$PYTHONPATH:$PWD/../scripts
 # test failure of task first
-luigi --module luigi_test Dummy4
+# luigi --module luigi_test Dummy4
 
 # test for unfulfilled dependencies
 luigi --module luigi_test Dummy3
+luigi --module luigi_test DummyNeverFinish
+luigi --module luigi_test DummyProcessFailue
