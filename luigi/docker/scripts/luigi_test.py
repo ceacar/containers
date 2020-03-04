@@ -32,8 +32,20 @@ KAFKA_VERSION = (2, 4)
 producer = KafkaProducer(bootstrap_servers=['kafka:9092'],  api_version=KAFKA_VERSION)
 KAFKA_TOPIC="test"
 
+def get_ts_now():
+    ts_now = datetime.datetime.now()
+    str_ts = ts_now.strftime('YYYY-MM')
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-def message_kafka(msg):
+
+def message_kafka(type_str, msg):
+    dict_to_send = {}
+    dict_to_send["ts"] = get_ts_now()
+    dict_to_send["type"] = type_str
+    dict_to_send["message"] = msg
+    send_msg_to_kafk(json.dumps(dict_to_send))
+
+def send_msg_to_kafk(msg):
     try:
         producer.send(KAFKA_TOPIC, value=msg)
     except Exception as e:
@@ -51,7 +63,7 @@ def format_error(task, subject, headline, formatted_traceback):
     formatted_headline = headline.format(task=task)
     command = subprocess.list2cmdline(sys.argv)
     message = luigi.notifications.format_task_error(formatted_headline, task, command, formatted_traceback)
-    return '\n'.join([formatted_subject, message])
+    return ''.join([formatted_subject, message]).strip('\n')
 
 
 def format_time(time_spent):
@@ -73,7 +85,11 @@ def alert_failed_task(task, err):
     subject="Luigi: {task} failed scheduling. Host: {host}"
     headline="Will not run {task} or any dependencies due to error in deps() method"
     msg = format_error(task, subject, headline, formatted_traceback)
-    message_kafka(msg)
+
+    type_str = "Failed"
+    if "Unfulfilled dependency at run time:" in msg:
+        type_str = "Unfulfilled Dependencies"
+    message_kafka(type_str, msg)
 
 
 @luigi.Task.event_handler(luigi.Event.PROCESSING_TIME)
@@ -85,7 +101,7 @@ def long_running(task, time_spent):
     """
     tm = format_time(time_spent)
     msg = "{task} finished; time took: {time}".format(task=task, time=tm)
-    message_kafka(msg)
+    message_kafka("Task Finished", msg)
 
 # ==========================END OF WHAT WORKS==============================
 
@@ -97,7 +113,7 @@ def process_failure(task,err):
     alerts when a process failed
     """
     msg = "{} process failure {}".format(task,err)
-    message_kafka(msg)
+    message_kafka("Process Failed", msg)
 
 
 # def format_unfulfilled_dependencies_message(task, subject, headline, formatted_traceback):
@@ -229,7 +245,6 @@ class DummyNeverFinish(Dummy1):
         return False
 
     def requires(self):
-        print("requiring DummyRunsForever")
         yield DummyRunsForever()
 
 class Dummy3(Dummy1):
@@ -239,8 +254,19 @@ class Dummy3(Dummy1):
         yield luigi.task.externalize(DummyNeverFinish())
 
     def run(self):
+        print("running Dummp3")
         super(Dummy3, self).run()
         raise Exception('oof')
+
+
+class DummyFailed(Dummy1):
+    has_been_run = False
+
+    def run(self):
+        print("running Dummp3")
+        super(Dummy3, self).run()
+        raise Exception('oof')
+
 
 
 class Dummy4(Dummy1):
