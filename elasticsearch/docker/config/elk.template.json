@@ -1,0 +1,46 @@
+{
+  "index_patterns":["aggr-*"],
+  "settings":{
+    "number_of_shards":1
+  },
+  "mappings" : {
+    "properties" : {
+      "@timestamp" : {
+        "type" : "date"
+      },
+      "@version" : {
+        "type" : "keyword"
+      },
+      "dependency_missing" : {
+        "type" : "keyword"
+      },
+      "host" : {
+        "type" : "keyword"
+      },
+      "message" : {
+        "type" : "text",
+        "norms" : false
+          },
+      "task" : {
+        "type" : "text",
+        "norms" : false,
+        "fields" : {
+          "keyword" : {
+            "type" : "keyword",
+            "ignore_above" : 256
+          }
+        }
+      },
+      "type" : {
+        "type" : "text",
+        "norms" : false,
+        "fields" : {
+          "keyword" : {
+            "type" : "keyword",
+            "ignore_above" : 256
+          }
+        }
+      }
+    }
+  }
+}

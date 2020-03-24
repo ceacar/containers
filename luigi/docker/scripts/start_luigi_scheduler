@@ -1,7 +1,7 @@
 #!/bin/bash
 # default luigi port is 8082, use --port to use other ports
 echo "starting luigi scheduler"
-luigid --background --pidfile /root/luigi/luigi.scheduler.pid --logdir /root/luigi/log --port 10000 # --state-path <PATH_TO_STATEFILE>
+luigid --background --pidfile /root/luigi/luigi.scheduler.pid --logdir /root/luigi/log --port 10000 & # --state-path <PATH_TO_STATEFILE>
 while true;do
-  sleep 360
+  sleep 36000000000000000000000
 done

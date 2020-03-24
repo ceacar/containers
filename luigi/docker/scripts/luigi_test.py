@@ -6,7 +6,8 @@ DEPENDENCY_PRESENT= 'event.core.dependency.present'
 BROKEN_TASK= 'event.core.task.broken'
 START= 'event.core.start'
 PROGRESS= 'event.core.progress'
-This event can be fired by the task itself while running. The purpose is for the task to report progress, metadata or any generic info so that event handler listening for this can keep track of the progress of running task.
+This event can be fired by the task itself while running. The purpose is for the task to report progress,
+metadata or any generic info so that event handler listening for this can keep track of the progress of running task.
 
 FAILURE= 'event.core.failure'
 SUCCESS= 'event.core.success'
@@ -30,25 +31,28 @@ import datetime
 logger = logging.getLogger('luigi')
 KAFKA_VERSION = (2, 4)
 producer = KafkaProducer(bootstrap_servers=['kafka:9092'],  api_version=KAFKA_VERSION)
-KAFKA_TOPIC="test"
+KAFKA_TOPIC = "test"
+
 
 def get_ts_now():
-    ts_now = datetime.datetime.now()
-    str_ts = ts_now.strftime('YYYY-MM')
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-def message_kafka(type_str, msg):
+def message_kafka(type_str, task, msg, extra_fields={}):
     dict_to_send = {}
     dict_to_send["ts"] = get_ts_now()
     dict_to_send["type"] = type_str
     dict_to_send["message"] = msg
+    dict_to_send["task"] = str(task)
+    dict_to_send.update(extra_fields)
     send_msg_to_kafk(json.dumps(dict_to_send))
+
 
 def send_msg_to_kafk(msg):
     try:
+        logger.warning("sending {}".format(msg))
         producer.send(KAFKA_TOPIC, value=msg)
-    except Exception as e:
+    except Exception:
         logger.wanring("failed to send to kafka")
 
 
@@ -75,25 +79,49 @@ def format_time(time_spent):
     return "%d:%02d:%02d" % (hr, mon, sec)
 
 
+"""
+Luigi: DummyNeverFinish() failed scheduling.
+Host: luigi_hostWill not run DummyNeverFinish() or any dependencies due to error in deps()
+method Name: DummyNeverFinish Parameters:
+    Command line: /usr/local/bin/luigi --local-scheduler --module luigi_test DummyNeverFinish Traceback (most recent call last):
+    File "/usr/local/lib/python2.7/dist-packages/luigi/worker.py", line 184, in run raise RuntimeError('Unfulfilled %s at run time: %s' % (deps, ', '.join(missing)))
+RuntimeError: Unfulfilled dependency at run time: DummyRunsForever__99914b932b
+"""
+
+
+def extract_dependency_classes(err_message):
+    depended_on_class = "CannotParseDependency"
+    try:
+        res = err_message.split("Unfulfilled dependency at run time:")
+        depended_on_class = '_'.join(res[-1].split('_')[:-1]).strip('_')
+    except Exception:
+        pass
+    return depended_on_class
+
+
 @luigi.Task.event_handler(luigi.Event.FAILURE)
 def alert_failed_task(task, err):
     """
     alerts when task failed
     """
-    host = socket.gethostname()
+
+    extra_json_fields = {}
+    # host = socket.gethostname()
     formatted_traceback = format_traceback()
-    subject="Luigi: {task} failed scheduling. Host: {host}"
-    headline="Will not run {task} or any dependencies due to error in deps() method"
+    subject = "Luigi: {task} failed scheduling. Host: {host}"
+    headline = "Will not run {task} or any dependencies due to error in deps() method"
     msg = format_error(task, subject, headline, formatted_traceback)
 
     type_str = "Failed"
     if "Unfulfilled dependency at run time:" in msg:
         type_str = "Unfulfilled Dependencies"
-    message_kafka(type_str, msg)
+        depended_on_class = extract_dependency_classes(msg)
+        extra_json_fields["dependency_missing"] = depended_on_class
+    message_kafka(type_str, task, msg, extra_fields=extra_json_fields)
 
 
 @luigi.Task.event_handler(luigi.Event.PROCESSING_TIME)
-def long_running(task, time_spent):
+def task_time_handler(task, time_spent):
     """
     keeps track of how long a task took
     task, class, class of the task
@@ -101,19 +129,19 @@ def long_running(task, time_spent):
     """
     tm = format_time(time_spent)
     msg = "{task} finished; time took: {time}".format(task=task, time=tm)
-    message_kafka("Task Finished", msg)
+    message_kafka("Task Finished", task, msg)
 
 # ==========================END OF WHAT WORKS==============================
 
 
 # cannot recreate this
 @luigi.Task.event_handler(luigi.Event.PROCESS_FAILURE)
-def process_failure(task,err):
+def process_failure(task, err):
     """
     alerts when a process failed
     """
-    msg = "{} process failure {}".format(task,err)
-    message_kafka("Process Failed", msg)
+    msg = "{} process failure {}".format(task, err)
+    message_kafka("Process Failed", task, msg)
 
 
 # def format_unfulfilled_dependencies_message(task, subject, headline, formatted_traceback):
@@ -224,8 +252,10 @@ class Dummy1(luigi.Task):
             return True
         return False
 
+
 class Dummy2(Dummy1):
     has_been_run = False
+
     def requires(self):
         yield Dummy1()
 
@@ -237,18 +267,22 @@ class DummyRunsForever(Dummy1):
 
 
 class DummyNeverFinish(Dummy1):
+
     def run(self):
         print("running DummyNeverFinish")
         import time
         time.sleep(1)
+
     def complete(self):
         return False
 
     def requires(self):
         yield DummyRunsForever()
 
+
 class Dummy3(Dummy1):
     has_been_run = False
+
     def requires(self):
         yield Dummy1()
         yield luigi.task.externalize(DummyNeverFinish())
@@ -264,13 +298,13 @@ class DummyFailed(Dummy1):
 
     def run(self):
         print("running Dummp3")
-        super(Dummy3, self).run()
+        super(DummyFailed, self).run()
         raise Exception('oof')
-
 
 
 class Dummy4(Dummy1):
     has_been_run = False
+
     def requires(self):
         return []
 

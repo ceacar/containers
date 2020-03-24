@@ -5,6 +5,6 @@ PYTHONPATH=$PYTHONPATH:$PWD/../scripts
 
 # test for unfulfilled dependencies
 luigi --local-scheduler --module luigi_test DummyFailed
-# luigi --module luigi_test Dummy3
-# luigi --module luigi_test DummyNeverFinish
-# luigi --module luigi_test DummyProcessFailue
+luigi --local-scheduler --module luigi_test Dummy3
+luigi --local-scheduler --module luigi_test DummyNeverFinish
+luigi --local-scheduler --module luigi_test DummyProcessFailue

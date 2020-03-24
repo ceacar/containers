@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+
+
+# start filebeat in the background to push ariflow logs to elasticsearch
+cd /root/filebeat
+./filebeat -c filebeat.yml -e > /tmp/filebeat.log.txt 2>&1 &
+cd - 
+
 # suppose airflow_home is mounted to /airflow
 export AIRFLOW_HOME=/root/airflow
 # start the web server, default port is 8080

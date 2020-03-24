@@ -1,0 +1,10 @@
+filebeat.inputs:
+- type: log
+  paths:
+  - '/root/airflow/logs/scheduler/*/*.log'
+  json.message_key: log
+  json.keys_under_root: true
+  processors:
+  - add_docker_metadata: ~
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
