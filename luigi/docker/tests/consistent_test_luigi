@@ -1,0 +1,30 @@
+#!/bin/bash
+PYTHONPATH=$PYTHONPATH:$PWD/../scripts
+# test failure of task first
+# luigi --module luigi_test Dummy4
+
+# test for unfulfilled dependencies
+
+while true;do
+    lottery_process=$(shuf -i 1-100 -n 1)
+    echo "rolled $lottery_process"
+    # we take 5 percent chance to run tasks, this will yield running 3 times in an hour
+    if [[ $lottery_process -ge 95 ]];then
+
+        lottery=$(shuf -i 1-5000 -n 1)
+        if [[ $lottery -ge 4000 ]];then
+            luigi --local-scheduler --module luigi_test DummyFailed
+            luigi --local-scheduler --module luigi_test Dummy3
+            luigi --local-scheduler --module luigi_test DummyNeverFinish
+            luigi --local-scheduler --module luigi_test DummyProcessFailue
+        else
+            luigi --local-scheduler --module luigi_test DMDSegments
+            luigi --local-scheduler --module luigi_test DMDCookies
+        fi
+    else
+        echo "skipped running task"
+
+        # sleep 1 minute
+        sleep 60
+    fi
+done

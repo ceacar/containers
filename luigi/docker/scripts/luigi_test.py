@@ -53,7 +53,7 @@ def send_msg_to_kafk(msg):
         logger.warning("sending {}".format(msg))
         producer.send(KAFKA_TOPIC, value=msg)
     except Exception:
-        logger.wanring("failed to send to kafka")
+        logger.warning("failed to send to kafka")
 
 
 def format_traceback():
@@ -104,7 +104,6 @@ def alert_failed_task(task, err):
     """
     alerts when task failed
     """
-
     extra_json_fields = {}
     # host = socket.gethostname()
     formatted_traceback = format_traceback()
@@ -158,71 +157,49 @@ def process_failure(task, err):
 #     print("{task} finished at {current_time}".format(task=task, current_time=current_time))
 
 
-"""
-kafka_test | DummyRunsForever() finished; time took: 1:00:00
-kafka_test | Luigi: {task} failed scheduling. Host: {host}Will not run DummyNeverFinish() or any dependencies due to error in deps() method
-kafka_test |
-kafka_test | Name: DummyNeverFinish
-kafka_test |
-kafka_test | Parameters:
-kafka_test |
-kafka_test |
-kafka_test | Command line:
-kafka_test |   /usr/local/bin/luigi --local-scheduler --module luigi_test DummyNeverFinish
-kafka_test |
-kafka_test | Traceback (most recent call last):
-kafka_test |   File "/usr/local/lib/python2.7/dist-packages/luigi/worker.py", line 185, in run
-kafka_test |     raise RuntimeError('Unfulfilled %s at run time: %s' % (deps, ', '.join(missing)))
-kafka_test | RuntimeError: Unfulfilled dependency at run time: DummyRunsForever__99914b932b
-kafka_test |
-kafka_test |
-kafka_test | Luigi: {task} failed scheduling. Host: {host}Will not run DummyNeverFinish() or any dependencies due to error in deps() method
-kafka_test |
-kafka_test | Name: DummyNeverFinish
-kafka_test |
-kafka_test | Parameters:
-kafka_test |
-kafka_test |
-kafka_test | Command line:
-kafka_test |   /usr/local/bin/luigi --local-scheduler --module luigi_test DummyNeverFinish
-kafka_test |
-kafka_test | Traceback (most recent call last):
-kafka_test |   File "/usr/local/lib/python2.7/dist-packages/luigi/worker.py", line 185, in run
-kafka_test |     raise RuntimeError('Unfulfilled %s at run time: %s' % (deps, ', '.join(missing)))
-kafka_test | RuntimeError: Unfulfilled dependency at run time: DummyRunsForever__99914b932b
-"""
+def format_cmd_input():
+    # command came from argvs
+    return '_'.join([c.replace('-', '_') for c in sys.argv[4:]])
 
 
-# @luigi.Task.event_handler(luigi.Event.DEPENDENCY_MISSING)
-# def alert_unfulfilled_dependency(task):
-#     # task, formatted_traceback,
-#     # subject="Luigi: {task} failed scheduling. Host: {host}",
-#     # headline="Will not run {task} or any dependencies due to error in deps() method",
-#     # formatted_subject = subject.format(task=task, host=self.host)
-#     # formatted_headline = headline.format(task=task, host=self.host)
-#     # command = subprocess.list2cmdline(sys.argv)
-#     # message = luigi.notifications.format_task_error(formatted_headline, task, command, formatted_traceback)
-#
-#     missing = [dep.task_id for dep in task.deps() if not dep.complete()]
-#     deps = 'dependency' if len(missing) == 1 else 'dependencies'
-#
-#     host = socket.gethostname()
-#     formatted_traceback = ""
-#
-#     # subject="Luigi: {task} FAILED. Host: {host}",
-#     subject=">>>>>>>>>>>Luigi: {task} FAILED. Host: {host}"
-#     headline="A task failed when running. Most likely run() raised an exception."
-#
-#     exception_traceback = None
-#     try:
-#         err_msg = 'Unfulfilled %s at run time: %s' % (deps, task)
-#         raise RuntimeError(err_msg)
-#     except Exception as e:
-#         typ, val, trc =  sys.exc_info()
-#         formatted_traceback = ''.join(traceback.format_exception(type, val, trc))
-#
-#     msg = format_error(task, subject, headline, formatted_traceback)
-#     producer.send(KAFKA_TOPIC, value=msg)
+@luigi.Task.event_handler(luigi.Event.DEPENDENCY_MISSING)
+def alert_unfulfilled_dependency(task):
+    """
+    luigi unfulfilled dependency handling is different, the task is the missing dependency
+    and we will need to parse which parent task trigger this child task
+    """
+    # missing = [dep.task_id for dep in task.deps() if not dep.complete()]
+    # deps = 'dependency' if len(missing) == 1 else 'dependencies'
+
+    # host = socket.gethostname()
+    # formatted_traceback = ""
+
+    # subject="Luigi: {task} FAILED. Host: {host}",
+    # subject = "Luigi: {task} FAILED. Host: {host}"
+    # headline = "A task failed when running. Most likely run() raised an exception."
+
+    parent_task = format_cmd_input()
+    msg = "{parent_task} is blocked by {task}".format(parent_task=parent_task, task=task)
+
+    # exception_traceback = None
+    # try:
+    #     # here we formulate the error message, then raise to be caught with except clause
+    #     err_msg = 'Unfulfilled %s at run time: %s' % (deps, task)
+    #     raise RuntimeError(err_msg)
+    # except Exception:
+    #     typ, val, trc = sys.exc_info()
+    #     formatted_traceback = ''.join(traceback.format_exception(typ, val, trc))
+
+    # msg = format_error(task, subject, headline, formatted_traceback)
+
+    type_str = "Unfulfilled Dependencies"
+    # depended_on_class = extract_dependency_classes(msg)
+
+    # task is the dependency that actual missing here
+    extra_json_fields = {"dependency_missing": str(task)}
+    print("Sending {}".format(msg))
+    # message_kafka(type_str, task, msg, extra_fields={})
+    message_kafka(type_str, parent_task, msg, extra_fields=extra_json_fields)
 
 
 # this doesn't work
@@ -277,6 +254,7 @@ class DummyNeverFinish(Dummy1):
         return False
 
     def requires(self):
+        # requires this dependency at run time. but why this would shoot out an unfulfilled dependecy email??
         yield DummyRunsForever()
 
 
@@ -316,4 +294,18 @@ class Dummy4(Dummy1):
 class DummyProcessFailue(Dummy1):
     def run(self):
         import time
-        time.sleep(9999999999999999)
+        time.sleep(30)
+
+
+class DMDInfoAggregated(Dummy1):
+    pass
+
+
+class DMDSegments(Dummy1):
+    def requires(self):
+        yield luigi.task.externalize(DMDInfoAggregated())
+
+
+class DMDCookies(Dummy1):
+    def run(self):
+        raise Exception('oof')

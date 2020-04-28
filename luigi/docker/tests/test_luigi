@@ -4,7 +4,16 @@ PYTHONPATH=$PYTHONPATH:$PWD/../scripts
 # luigi --module luigi_test Dummy4
 
 # test for unfulfilled dependencies
-luigi --local-scheduler --module luigi_test DummyFailed
-luigi --local-scheduler --module luigi_test Dummy3
-luigi --local-scheduler --module luigi_test DummyNeverFinish
-luigi --local-scheduler --module luigi_test DummyProcessFailue
+
+
+lottery=$(shuf -i 1-5000 -n 1)
+if [[ $lottery -ge 4000 ]];then
+    luigi --local-scheduler --module luigi_test DummyFailed
+    luigi --local-scheduler --module luigi_test Dummy3
+    luigi --local-scheduler --module luigi_test DummyNeverFinish
+    luigi --local-scheduler --module luigi_test DummyProcessFailue
+else
+    luigi --local-scheduler --module luigi_test DMDSegments
+    luigi --local-scheduler --module luigi_test DMDCookies
+fi
+

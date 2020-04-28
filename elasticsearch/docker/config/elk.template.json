@@ -12,7 +12,14 @@
         "type" : "keyword"
       },
       "dependency_missing" : {
-        "type" : "keyword"
+        "type" : "text",
+        "norms" : false,
+        "fields" : {
+          "keyword" : {
+            "type" : "keyword",
+            "ignore_above" : 256
+          }
+        }
       },
       "host" : {
         "type" : "keyword"
@@ -20,7 +27,7 @@
       "message" : {
         "type" : "text",
         "norms" : false
-          },
+      },
       "task" : {
         "type" : "text",
         "norms" : false,
@@ -30,6 +37,9 @@
             "ignore_above" : 256
           }
         }
+      },
+      "dep_missing": {
+        "type": "keyword"
       },
       "type" : {
         "type" : "text",
